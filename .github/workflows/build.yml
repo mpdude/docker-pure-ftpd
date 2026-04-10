@@ -43,7 +43,8 @@ jobs:
           docker build --rm \
             --build-arg DEBIAN_VERSION=${{ matrix.debian }} \
             --build-arg SSL_LIB=${{ matrix.ssl_lib }} \
-            -t pure-ftpd-${{ matrix.debian }} .
+            -t pure-ftpd-${{ matrix.debian }} \
+            -t pure-ftp-demo .
 
       - name: Get pure-ftpd version
         id: version
@@ -51,6 +52,12 @@ jobs:
           VERSION=$(docker run --rm pure-ftpd-${{ matrix.debian }} dpkg-query -W -f='${Version}' pure-ftpd | cut -d- -f1)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Built pure-ftpd $VERSION on debian ${{ matrix.debian }}"
+
+      - name: Install test dependencies
+        run: sudo apt-get install -y lftp
+
+      - name: Test image
+        run: make run-tls logs-for-5 test-bob-tls
 
       - name: Tag and push
         if: inputs.push
