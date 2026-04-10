@@ -1,14 +1,15 @@
 #Stage 1 : builder debian image
 FROM debian:buster as builder
 
-# properly setup debian sources
+# properly setup debian sources (buster is EOL, packages moved to archive)
 ENV DEBIAN_FRONTEND noninteractive
-RUN echo "deb http://http.debian.net/debian buster main\n\
-deb-src http://http.debian.net/debian buster main\n\
-deb http://http.debian.net/debian buster-updates main\n\
-deb-src http://http.debian.net/debian buster-updates main\n\
-deb http://security.debian.org buster/updates main\n\
-deb-src http://security.debian.org buster/updates main\n\
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10archive
+RUN echo "deb http://archive.debian.org/debian buster main\n\
+deb-src http://archive.debian.org/debian buster main\n\
+deb http://archive.debian.org/debian buster-updates main\n\
+deb-src http://archive.debian.org/debian buster-updates main\n\
+deb http://archive.debian.org/debian-security buster/updates main\n\
+deb-src http://archive.debian.org/debian-security buster/updates main\n\
 " > /etc/apt/sources.list
 
 # install package building helpers
@@ -33,6 +34,10 @@ FROM debian:buster-slim
 
 # feel free to change this ;)
 LABEL maintainer "Andrew Stilliard <andrew.stilliard@gmail.com>"
+
+# buster is EOL, packages moved to archive
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10archive && \
+	echo "deb http://archive.debian.org/debian buster main\ndeb http://archive.debian.org/debian-security buster/updates main\n" > /etc/apt/sources.list
 
 # install dependencies
 # FIXME : libcap2 is not a dependency anymore. .deb could be fixed to avoid asking this dependency
