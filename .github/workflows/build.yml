@@ -54,8 +54,8 @@ jobs:
             DEBIAN_VERSION=${{ matrix.debian }}
             SSL_LIB=${{ matrix.ssl_lib }}
           load: true
-          cache-from: type=gha,scope=${{ matrix.debian }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.debian }}
+          cache-from: type=gha,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
           tags: |
             pure-ftpd-${{ matrix.debian }}
             pure-ftp-demo
@@ -64,7 +64,7 @@ jobs:
         run: |
           docker run --rm pure-ftpd-${{ matrix.debian }} \
             dpkg-query -W -f='${Package}\t${Version}\n' \
-            | sort > inventory-${{ matrix.debian }}.txt
+            | sort > inventory-${{ matrix.debian }}-${{ matrix.ssl_lib }}.txt
 
       - name: Install test dependencies
         run: sudo apt-get install -y lftp
@@ -74,8 +74,8 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: inventory-${{ matrix.debian }}
-          path: inventory-${{ matrix.debian }}.txt
+          name: inventory-${{ matrix.debian }}-${{ matrix.ssl_lib }}
+          path: inventory-${{ matrix.debian }}-${{ matrix.ssl_lib }}.txt
 
   commit-inventory:
     needs: build
@@ -109,9 +109,9 @@ jobs:
         run: |
           mkdir -p inventory
           for artifact in inventory-*.txt; do
-            debian="${artifact#inventory-}"
-            debian="${debian%.txt}"
-            mv "$artifact" "inventory/${debian}.txt"
+            variant="${artifact#inventory-}"
+            variant="${variant%.txt}"
+            mv "$artifact" "inventory/${variant}.txt"
           done
 
           git add inventory/*.txt
@@ -142,7 +142,7 @@ jobs:
           echo "SHA=${{ needs.commit-inventory.outputs.sha }}" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${{ needs.commit-inventory.outputs.sha }} | cut -c1-12)" >> $GITHUB_ENV
           echo "BUILD_DATE=$(date -u +%Y%m%d)" >> $GITHUB_ENV
-          echo "VERSION=$(awk -F'\t' '$1=="pure-ftpd"{print $2}' inventory/${{ matrix.debian }}.txt | cut -d- -f1)" >> $GITHUB_ENV
+          echo "VERSION=$(awk -F'\t' '$1=="pure-ftpd"{print $2}' inventory/${{ matrix.debian }}-${{ matrix.ssl_lib }}.txt | cut -d- -f1)" >> $GITHUB_ENV
 
       # QEMU is needed to cross-build the arm64 variant (pure-ftpd is
       # compiled from source, so this emulates actual compilation, not just
@@ -165,8 +165,8 @@ jobs:
             DEBIAN_VERSION=${{ matrix.debian }}
             SSL_LIB=${{ matrix.ssl_lib }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=gha,scope=${{ matrix.debian }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.debian }}
+          cache-from: type=gha,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
 
       # - name: Build and push image with SBOM
       #   if: github.event_name == 'schedule' || inputs.push
@@ -180,8 +180,8 @@ jobs:
       #     push: true
       #     sbom: true
       #     provenance: true
-      #     cache-from: type=gha,scope=${{ matrix.debian }}
-      #     cache-to: type=gha,mode=max,scope=${{ matrix.debian }}
+      #     cache-from: type=gha,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
+      #     cache-to: type=gha,mode=max,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
       #     tags: |
       #       stilliard/pure-ftpd:${{ matrix.debian }}-latest
       #       stilliard/pure-ftpd:${{ matrix.debian }}-${{ env.VERSION }}
