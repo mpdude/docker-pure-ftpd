@@ -8,6 +8,9 @@ FROM debian:${DEBIAN_VERSION} as builder
 # Enable deb-src repos needed for apt-get source & build-dep:
 #   Trixie+ uses DEB822 format (.sources files); older distros use traditional sources.list
 ENV DEBIAN_FRONTEND noninteractive
+# Retry transient mirror/CDN fetch failures (e.g. connection resets) instead
+# of failing the whole build on a single flaky download.
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
 RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
 		sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources; \
 	else \
@@ -38,6 +41,7 @@ LABEL maintainer "Andrew Stilliard <andrew.stilliard@gmail.com>"
 # FIXME : libcap2 is not a dependency anymore. .deb could be fixed to avoid asking this dependency
 ENV DEBIAN_FRONTEND noninteractive
 ARG SSL_LIB=libssl3
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
 RUN apt-get -y update && \
 	apt-get  --no-install-recommends --yes install \
 	libc6 \
