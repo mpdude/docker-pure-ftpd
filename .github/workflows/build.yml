@@ -144,10 +144,6 @@ jobs:
           echo "BUILD_DATE=$(date -u +%Y%m%d)" >> $GITHUB_ENV
           echo "VERSION=$(awk -F'\t' '$1=="pure-ftpd"{print $2}' inventory/${{ matrix.debian }}-${{ matrix.ssl_lib }}.txt | cut -d- -f1)" >> $GITHUB_ENV
 
-      # QEMU is needed to cross-build the arm64 variant (pure-ftpd is
-      # compiled from source, so this emulates actual compilation, not just
-      # a binary copy - noticeably slower than the native amd64 build).
-      - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
 
       # - name: Login to Docker Hub
@@ -164,7 +160,6 @@ jobs:
           build-args: |
             DEBIAN_VERSION=${{ matrix.debian }}
             SSL_LIB=${{ matrix.ssl_lib }}
-          platforms: linux/amd64,linux/arm64
           cache-from: type=gha,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
           cache-to: type=gha,mode=max,scope=${{ matrix.debian }}-${{ matrix.ssl_lib }}
 
@@ -176,7 +171,6 @@ jobs:
       #     build-args: |
       #       DEBIAN_VERSION=${{ matrix.debian }}
       #       SSL_LIB=${{ matrix.ssl_lib }}
-      #     platforms: linux/amd64,linux/arm64
       #     push: true
       #     sbom: true
       #     provenance: true
