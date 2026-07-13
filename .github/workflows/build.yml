@@ -8,6 +8,9 @@ permissions:
   contents: write
 
 on:
+  push:
+    branches:
+      - master
   schedule:
     # Runs on the 1st and 15th of every month, approximating a 14-day rebuild
     # cadence so the image keeps picking up current Debian security updates.
